@@ -11,10 +11,8 @@ from groq import Groq
 from pathlib import Path
 
 env_path = Path("C:/Users/Himadri/OneDrive/Documents/Desktop/rag_university_chatbot/.env")
-print("ENV FILE EXISTS:", env_path.exists())
 load_dotenv(dotenv_path=env_path, override=True)
 os.environ["HUGGINGFACEHUB_API_TOKEN"] = os.getenv("HF_TOKEN", "")
-print("GROQ KEY:", os.getenv("GROQ_API_KEY"))
 
 # ─── PAGE CONFIG ────────────────────────────────────────────────────────────
 st.set_page_config(
@@ -522,8 +520,7 @@ def extract_pdf_text(uploaded_file):
                 if block[6] == 0:  # text block
                     text += block[4] + "\n"
         text = "\n".join(list(dict.fromkeys(text.split("\n"))))  # remove duplicates
-        print(f"DEBUG OCR extracted: {len(text)} chars")
-        print(f"DEBUG text preview: {text[:300]}")
+        
         return text[:3000] if text.strip() else "Could not extract text from PDF."
     except Exception as e:
         print(f"PDF Error: {str(e)}")
@@ -570,15 +567,14 @@ def handle_query(query, db, chat_history, pdf_context=""):
             if any(word_match(a, course_name) for a in aliases):
                 strict.append(c)
             else:
-                print(f"DROPPED: {c.get('university')} - {c.get('course name')} | aliases: {aliases}")
+                pass
         if strict:
             parsed = strict
         else:
             parsed=parsed
 
     filtered = filter_courses(parsed, universities, detected_course)
-    print(f"DEBUG parsed unis: {[c.get('university') for c in parsed]}")
-    print(f"DEBUG filtered unis: {[c.get('university') for c in filtered]}")
+    
     if detected_course and len(filtered) == 0:
         return "Sorry, that course doesn't appear to be available in the selected universities. Try asking without specifying a university to see all options."
     if not filtered:
