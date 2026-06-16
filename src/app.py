@@ -8,6 +8,16 @@ from langchain_core.documents import Document
 from dotenv import load_dotenv
 from groq import Groq
 
+import easyocr
+_ocr_reader = None
+
+def get_ocr_reader():
+    global _ocr_reader
+    if _ocr_reader is None:
+        _ocr_reader = easyocr.Reader(['en'], gpu=False)
+    return _ocr_reader
+
+
 from pathlib import Path
 
 env_path = Path("C:/Users/ASUS/OneDrive/Desktop/rag_university_chatbot/.env")
@@ -509,20 +519,28 @@ def extract_pdf_text(uploaded_file):
         pdf_bytes = uploaded_file.read()
         doc = fitz.open(stream=pdf_bytes, filetype="pdf")
         text = ""
+
+        # -------- First try normal text extraction --------
         for page in doc:
-            # Extract text directly — works for digital PDFs
             page_text = page.get_text("text")
             text += page_text + "\n"
-            # Also try blocks for table data
-            blocks = page.get_text("blocks")
-            for block in blocks:
-                if block[6] == 0:  # text block
-                    text += block[4] + "\n"
-        text = "\n".join(list(dict.fromkeys(text.split("\n"))))  # remove duplicates
-        
+
+        text = "\n".join(dict.fromkeys(text.splitlines()))
+
+        # -------- If very little text → use EasyOCR --------
+        if len(text.replace("\n", "").strip()) < 50:
+            text = ""
+            reader = get_ocr_reader()
+            for page in doc:
+                pix = page.get_pixmap(matrix=fitz.Matrix(2, 2))
+                img_bytes = pix.tobytes("png")
+                result = reader.readtext(img_bytes)
+                for detection in result:
+                    text += detection[1] + "\n"
+
         return text[:3000] if text.strip() else "Could not extract text from PDF."
+
     except Exception as e:
-        print(f"PDF Error: {str(e)}")
         return f"PDF Error: {str(e)}"
 
 #  MAIN QUERY HANDLER 
