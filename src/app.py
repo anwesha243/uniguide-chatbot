@@ -10,11 +10,10 @@ from groq import Groq
 
 from pathlib import Path
 
-env_path = Path("C:/Users/Himadri/OneDrive/Documents/Desktop/rag_university_chatbot/.env")
+env_path = Path("C:/Users/ASUS/OneDrive/Desktop/rag_university_chatbot/.env")
 load_dotenv(dotenv_path=env_path, override=True)
 os.environ["HUGGINGFACEHUB_API_TOKEN"] = os.getenv("HF_TOKEN", "")
-
-# ─── PAGE CONFIG ────────────────────────────────────────────────────────────
+#  PAGE CONFIG 
 st.set_page_config(
     page_title="UniGuide — West Bengal University Chatbot",
     page_icon="🎓",
@@ -22,7 +21,7 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# ─── CUSTOM CSS ─────────────────────────────────────────────────────────────
+#  CUSTOM CSS 
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
@@ -287,7 +286,7 @@ html, body, [class*="css"] {
 </style>
 """, unsafe_allow_html=True)
 
-# ─── AUTHENTICATION ──────────────────────────────────────────────────────────
+#  AUTHENTICATION 
 import sys
 sys.path.append(os.path.dirname(__file__))
 from login_page import show_login_page
@@ -305,12 +304,12 @@ if not st.session_state.logged_in:
         show_register_page()
     st.stop()
 
-# ─── GROQ CLIENT ────────────────────────────────────────────────────────────
+# GROQ CLIENT
 @st.cache_resource
 def get_groq_client():
     return Groq(api_key=os.getenv("GROQ_API_KEY"))
 
-# ─── HELPERS ────────────────────────────────────────────────────────────────
+#  HELPERS 
 def normalize(text):
     text = text.lower()
     text = re.sub(r'[^a-z0-9 ]', '', text)
@@ -319,7 +318,7 @@ def normalize(text):
 def word_match(word, text):
     return re.search(r'\b' + re.escape(word) + r'\b', text) is not None
 
-# ─── COURSE ALIASES ─────────────────────────────────────────────────────────
+# COURSE ALIASES 
 course_alias = {
     "ba": ["ba", "b.a", "bachelor of arts"],
     "bsc": ["bsc", "b.sc", "bachelor of science"],
@@ -357,7 +356,7 @@ INTEREST_SUGGESTIONS = {
     "law": ["LL.M. fees in KU", "Law courses available in KU", "LLM admission process"],
 }
 
-# ─── LOAD DATA ───────────────────────────────────────────────────────────────
+#  LOAD DATA 
 @st.cache_resource
 def load_rag_system():
     data_files = {
@@ -381,7 +380,7 @@ def load_rag_system():
     db = FAISS.from_documents(documents, embeddings)
     return db
 
-# ─── PARSE COURSE ─────────────────────────────────────────────────────────
+#  PARSE COURSE 
 def parse_course(text):
     data = {}
     for line in text.split("\n"):
@@ -395,7 +394,7 @@ def parse_course(text):
                 data[key] = value
     return data
 
-# ─── FILTER COURSES ───────────────────────────────────────────────────────
+# FILTER COURSES 
 def filter_courses(courses, universities=None, detected_course=None):
     filtered = []
     for data in courses:
@@ -411,7 +410,7 @@ def filter_courses(courses, universities=None, detected_course=None):
         filtered.append(data)
     return filtered
 
-# ─── DETECT ENTITIES ──────────────────────────────────────────────────────
+# DETECT ENTITIES
 def detect_entities(query):
     nq = normalize(query)
     universities = []
@@ -440,7 +439,7 @@ def detect_entities(query):
     intents = list({field for kw, field in intent_map.items() if kw in nq})
     return universities, detected_course, intents
 
-# ─── DETECT INTEREST ──────────────────────────────────────────────────────
+#  DETECT INTEREST
 def detect_interest(query):
     nq = query.lower()
     for topic, suggestions in INTEREST_SUGGESTIONS.items():
@@ -461,7 +460,7 @@ def detect_interest(query):
             return topic, INTEREST_SUGGESTIONS[topic]
     return None, []
 
-# ─── GROQ ANSWER ──────────────────────────────────────────────────────────
+#  GROQ ANSWER 
 def ask_groq(question, context, chat_history=None):
     client = get_groq_client()
     history_text = ""
@@ -504,7 +503,7 @@ Answer:"""
     )
     return response.choices[0].message.content
 
-# ─── PDF EXTRACTION ────────────────────────────────────────────────────────
+#  PDF EXTRACTION 
 def extract_pdf_text(uploaded_file):
     try:
         pdf_bytes = uploaded_file.read()
@@ -526,7 +525,7 @@ def extract_pdf_text(uploaded_file):
         print(f"PDF Error: {str(e)}")
         return f"PDF Error: {str(e)}"
 
-# ─── MAIN QUERY HANDLER ───────────────────────────────────────────────────
+#  MAIN QUERY HANDLER 
 def handle_query(query, db, chat_history, pdf_context=""):
     universities, detected_course, intents = detect_entities(query)
     nq = normalize(query)
@@ -593,7 +592,7 @@ def handle_query(query, db, chat_history, pdf_context=""):
     # Always use Groq for natural, conversational answers
     return ask_groq(query, context, chat_history)
 
-# ─── SIDEBAR ─────────────────────────────────────────────────────────────
+#  SIDEBAR 
 with st.sidebar:
     st.markdown(f"""
     <div style="padding: 0.5rem 0 1rem 0;">
@@ -654,7 +653,7 @@ with st.sidebar:
     </div>
     """, unsafe_allow_html=True)
 
-# ─── MAIN AREA ───────────────────────────────────────────────────────────
+# MAIN AREA 
 col_main, col_info = st.columns([3, 1.1])
 
 with col_main:
@@ -768,7 +767,7 @@ with col_main:
         st.session_state.messages.append({"role": "assistant", "content": response})
         st.rerun()
 
-# ─── RIGHT INFO PANEL ────────────────────────────────────────────────────
+# RIGHT INFO PANEL 
 with col_info:
     st.markdown('<br>', unsafe_allow_html=True)
     st.markdown("""
